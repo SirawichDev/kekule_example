@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <script src="js/Three.js"></script>
+    <script src="js/kekule/kekule.min.js?module=chemWidget,calculation,io,html,openbabel,indigo"></script>
+    <script src="js/openchemlib/openchemlib-full.js"></script>
+    <link rel="stylesheet" type="text/css" href="js/kekule/themes/default/kekule.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main>
+      <div id="chemViewer" style="width:1000px;height:650px"
+        data-widget="Kekule.ChemWidget.Viewer3D" data-enable-toolbar="true" data-auto-size="false" data-padding="20"
+        data-toolbar-evoke-modes="[0]">
+      </div>
+    </main>
+    <footer></footer>
+
+    <script>
+      var chemViewer;
+
+      function drawSmiles(smilesString) {
+        var molecule = OCL.Molecule.fromSmiles(smilesString, { 'noCoordinates': true, 'noStereo': false })
+        molecule.addMissingChirality();
+        var chemObject = Kekule.IO.loadFormatData(molecule.toMolfileV3(), 'mol');
+        chemViewer.setChemObj(chemObject);  // 2D
+
+        var chemMolecule = Kekule.ChemStructureUtils.getTotalStructFragment(chemObject);
+
+        var calculator = Kekule.Calculator.generate3D(chemMolecule, {'forceField': ''},
+          function(chem3Dobject) {
+            chemViewer.setChemObj(chem3Dobject);
+          },
+          function(err) {
+            Kekule.error(err);
+          });
+      }
+
+      function init() {
+        Kekule.Indigo.enable();
+
+        chemViewer = Kekule.Widget.getWidgetById('chemViewer');
+        chemViewer.setPredefinedSetting('basic');
+
+        adjustSize();
+
+        window.onresize = adjustSize;
+
+        var acetoneSMILES = 'CC(=O)C';
+        var pyrrolidineSMILES = 'C1CCNC1';
+        var ovaleneSMILES = 'c1cc2c3c4c1ccc5cc6c7c8c(ccc9=c8c1c(cc9)cc(c3c1c7c54)cc2)cc6'; // Ovalene (C32H14) polycyclic aromatic hydrocarbon
+        var vitC_SMILES = 'OC[C@H](O)[C@H]1OC(=O)C(O)=C1O';
+        var vitB3_SMILES = 'c1cc(c[n+](c1)[C@H]2[C@@H]([C@@H]([C@H](O2)CO)O)O)C(=O)N';
+        // Vitamin B12
+        var vitB12_SMILES = 'NC(=O)C[C@@]8(C)[C@H](CCC(N)=O)C=2/N=C8/C(/C)=C1/[C@@H](CCC(N)=O)[C@](C)(CC(N)=O)[C@@](C)(N1[Co+]C#N)[C@@H]7/N=C(C(\C)=C3/N=C(/C=2)C(C)(C)[C@@H]3CCC(N)=O)[C@](C)(CCC(=O)NCC(C)OP([O-])(=O)O[C@@H]6[C@@H](CO)O[C@H](n5cnc4cc(C)c(C)cc45)[C@@H]6O)[C@H]7CC(N)=O';
+
+        drawSmiles(vitC_SMILES);
+      }
+
+      function adjustSize() {			
+        var dim = Kekule.HtmlElementUtils.getViewportDimension(document);
+        var headerDim = Kekule.HtmlElementUtils.getElemClientDimension(document.getElementById('header'));
+        chemViewer.setWidth(dim.width - 10 + 'px').setHeight(dim.height - 10 - headerDim.height + 'px');
+      }
+
+      Kekule.X.domReady(init);
+    </script>
+  </body>
+</html>
